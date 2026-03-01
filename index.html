@@ -3,33 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aptek Portalı - Sürətli Axtarış</title>
+    <title>Aptek Pro - Canlı Axtarış & Dark Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Dark Mode konfiqurasiyası
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <style>
         .modal-active { overflow: hidden; }
         .product-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        /* Skroll barı gözəlləşdirək */
+        .product-card:hover { transform: translateY(-5px); }
         #modalBody::-webkit-scrollbar { width: 6px; }
-        #modalBody::-webkit-scrollbar-track { background: #f1f1f1; }
+        #modalBody::-webkit-scrollbar-track { background: transparent; }
         #modalBody::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark #modalBody::-webkit-scrollbar-thumb { background: #475569; }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900">
+<body class="bg-slate-50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-    <header class="bg-white border-b sticky top-0 z-40 shadow-sm">
+    <header class="bg-white dark:bg-slate-800 border-b dark:border-slate-700 sticky top-0 z-40 shadow-sm transition-colors">
         <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 class="text-2xl font-black text-blue-600 tracking-tight cursor-pointer" onclick="location.reload()">
-                APTEK<span class="text-slate-400 font-light">PRO</span>
-            </h1>
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <h1 class="text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tight cursor-pointer" onclick="location.reload()">
+                    APTEK<span class="text-slate-400 font-light">ONLINE</span>
+                </h1>
+                <button onclick="toggleDarkMode()" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-yellow-400 transition-all">
+                    <span id="theme-icon-mobile">🌙</span>
+                </button>
+            </div>
             
-            <div class="relative flex-1 max-w-md w-full">
-                <input type="text" id="searchInput" placeholder="Dərman və ya tərkib axtar..." 
-                    class="w-full pl-5 pr-12 py-3 bg-slate-100 border-none rounded-full focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                <button onclick="searchMedicine()" class="absolute right-2 top-1.5 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition shadow-md">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
+            <div class="relative flex-1 max-w-md w-full flex items-center gap-3">
+                <div class="relative flex-1">
+                    <input type="text" id="searchInput" oninput="liveSearch()" placeholder="Dərman adını yazın..." 
+                        class="w-full pl-5 pr-12 py-3 bg-slate-100 dark:bg-slate-700 border-none rounded-full focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:placeholder-slate-400 shadow-inner">
+                    <div class="absolute right-4 top-3.5 text-slate-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
+                
+                <button onclick="toggleDarkMode()" class="hidden md:flex p-3 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-yellow-400 hover:scale-110 transition-all shadow-sm">
+                    <span id="theme-icon-desktop">🌙</span>
                 </button>
             </div>
         </div>
@@ -38,22 +53,22 @@
     <main class="max-w-6xl mx-auto p-4 lg:p-8 min-h-screen">
         <div id="loader" class="hidden flex flex-col items-center justify-center py-20">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p class="text-slate-500 animate-pulse">Məlumatlar gətirilir...</p>
+            <p class="text-slate-500 dark:text-slate-400 animate-pulse font-medium">Axtarılır...</p>
         </div>
         
         <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="col-span-full text-center py-20">
-                <div class="text-6xl mb-4">💊</div>
-                <h2 class="text-xl font-medium text-slate-400">Axtarış etmək üçün dərman adını yuxarıya daxil edin</h2>
+                <div class="text-6xl mb-4 grayscale dark:grayscale-0">💊</div>
+                <h2 class="text-xl font-medium text-slate-400 dark:text-slate-500">Dərman adını daxil etdiyiniz an nəticələr görünəcək</h2>
             </div>
         </div>
     </main>
 
-    <div id="detailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
-        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col scale-95 transition-transform duration-300" id="modalContainer">
-            <div class="p-5 border-b flex justify-between items-center bg-white sticky top-0">
+    <div id="detailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col scale-95 transition-transform duration-300 border dark:border-slate-700" id="modalContainer">
+            <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center sticky top-0 bg-inherit z-10">
                 <span class="font-bold text-slate-400 uppercase text-xs tracking-widest">Məhsulun Tam Təsviri</span>
-                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors text-2xl">&times;</button>
+                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500 transition-colors text-2xl">&times;</button>
             </div>
             
             <div id="modalBody" class="p-6 overflow-y-auto">
@@ -63,20 +78,51 @@
 
     <script>
         let currentProducts = [];
+        let searchTimeout = null;
 
-        // Axtarış funksiyası
-        async function searchMedicine() {
-            const query = document.getElementById('searchInput').value;
-            if (!query) return;
+        // Dark Mode funksiyası
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateIcons(isDark);
+        }
 
+        function updateIcons(isDark) {
+            const icon = isDark ? '☀️' : '🌙';
+            document.getElementById('theme-icon-mobile').innerText = icon;
+            document.getElementById('theme-icon-desktop').innerText = icon;
+        }
+
+        // İlkin rejim təyini
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            updateIcons(true);
+        }
+
+        // Canlı Axtarış (Debounce)
+        function liveSearch() {
+            clearTimeout(searchTimeout);
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (query.length < 2) {
+                if (query.length === 0) location.reload();
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                searchMedicine(query);
+            }, 300); // 300ms gözləyir ki, API-nı yormasın
+        }
+
+        async function searchMedicine(query) {
             const resultsDiv = document.getElementById('results');
             const loader = document.getElementById('loader');
             
             loader.classList.remove('hidden');
-            resultsDiv.innerHTML = '';
+            // resultsDiv.innerHTML = ''; // Köhnə nəticələri dərhal silmək istəsəniz açın
 
             try {
-                // Rəsmi API-dən məlumatın çəkilməsi
                 const url = `https://aptekonline.az/shop/productList?keywords=${encodeURIComponent(query)}&lang=az`;
                 const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
@@ -86,83 +132,78 @@
 
                 if (currentProducts.length === 0) {
                     resultsDiv.innerHTML = `
-                        <div class="col-span-full text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-                            <p class="text-slate-400 text-xl font-medium">Təəssüf, heç bir nəticə tapılmadı :(</p>
+                        <div class="col-span-full text-center py-20 bg-white dark:bg-slate-800 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+                            <p class="text-slate-400 text-xl font-medium">Nəticə tapılmadı :(</p>
                         </div>`;
                 } else {
+                    resultsDiv.innerHTML = '';
                     currentProducts.forEach((item, index) => {
                         resultsDiv.innerHTML += `
-                            <div class="product-card bg-white rounded-2xl shadow-sm border border-slate-100 p-5 cursor-pointer flex flex-col" onclick="showDetail(${index}, '${thumbFolder}')">
-                                <div class="bg-slate-50 rounded-xl mb-4 p-2 flex items-center justify-center">
-                                    <img src="${thumbFolder}${item.thumb1}" class="h-40 object-contain" alt="${item.name}" loading="lazy">
+                            <div class="product-card bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 cursor-pointer flex flex-col group transition-all" onclick="showDetail(${index}, '${thumbFolder}')">
+                                <div class="bg-slate-50 dark:bg-slate-900 rounded-xl mb-4 p-2 flex items-center justify-center transition-colors">
+                                    <img src="${thumbFolder}${item.thumb1}" class="h-40 object-contain group-hover:scale-105 transition-transform" alt="${item.name}" loading="lazy">
                                 </div>
-                                <h3 class="font-bold text-slate-800 h-12 overflow-hidden leading-tight mb-2 text-lg">${item.name}</h3>
-                                <div class="mt-auto flex items-center justify-between pt-4 border-t border-slate-50">
-                                    <span class="text-2xl font-black text-blue-600">${item.price} <small class="text-xs font-bold opacity-70">AZN</small></span>
-                                    <span class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">Detallı</span>
+                                <h3 class="font-bold text-slate-800 dark:text-slate-100 h-12 overflow-hidden leading-tight mb-2 text-lg">${item.name}</h3>
+                                <div class="mt-auto flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700">
+                                    <span class="text-2xl font-black text-blue-600 dark:text-blue-400">${item.price} <small class="text-xs font-bold opacity-70">AZN</small></span>
+                                    <span class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm group-hover:bg-blue-700 transition-colors">Bax</span>
                                 </div>
                             </div>
                         `;
                     });
                 }
             } catch (err) {
-                resultsDiv.innerHTML = `<p class="col-span-full text-red-400 text-center py-20 font-medium italic">Bağlantı xətası baş verdi. Yenidən yoxlayın.</p>`;
+                resultsDiv.innerHTML = `<p class="col-span-full text-red-400 text-center py-20 font-medium">Bağlantı xətası...</p>`;
             } finally {
                 loader.classList.add('hidden');
             }
         }
 
-        // Detallı pəncərəni açan funksiya
         function showDetail(index, thumbBase) {
             const item = currentProducts[index];
             const modal = document.getElementById('detailModal');
             const container = document.getElementById('modalContainer');
             const body = document.getElementById('modalBody');
-            
-            // Orijinal sayta link
             const officialUrl = `https://aptekonline.az/product/${item.url_id}`;
 
             body.innerHTML = `
                 <div class="flex flex-col md:flex-row gap-8 mb-8">
-                    <div class="w-full md:w-64 flex-shrink-0 bg-white rounded-2xl border p-4 shadow-inner flex items-center justify-center">
+                    <div class="w-full md:w-64 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-700 p-4 shadow-inner flex items-center justify-center transition-colors">
                         <img src="${thumbBase}${item.thumb1}" class="max-h-56 object-contain">
                     </div>
                     <div class="flex-1">
-                        <h2 class="text-2xl font-black text-slate-900 leading-tight mb-4">${item.name}</h2>
-                        <div class="inline-block bg-blue-50 text-blue-700 text-3xl font-black px-4 py-2 rounded-2xl mb-6">
+                        <h2 class="text-2xl font-black text-slate-900 dark:text-white leading-tight mb-4">${item.name}</h2>
+                        <div class="inline-block bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-3xl font-black px-4 py-2 rounded-2xl mb-6 transition-colors">
                             ${item.price} <span class="text-sm">AZN</span>
                         </div>
                         
-                        <div class="space-y-4 border-t border-slate-100 pt-6">
+                        <div class="space-y-4 border-t dark:border-slate-700 pt-6">
                             <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
-                                <span class="text-slate-400 text-sm font-bold uppercase tracking-wide">Təsiredici maddə:</span> 
-                                <span class="font-bold text-slate-800">${item.terkib || 'Məlum deyil'}</span>
+                                <span class="text-slate-400 dark:text-slate-500 text-sm font-bold uppercase tracking-wide italic">Təsiredici maddə:</span> 
+                                <span class="font-bold text-slate-800 dark:text-slate-200">${item.terkib || 'Məlum deyil'}</span>
                             </div>
                             <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
-                                <span class="text-slate-400 text-sm font-bold uppercase tracking-wide">İstehsalçı ölkə:</span> 
-                                <span class="font-bold text-slate-800">${item.olke || 'Məlum deyil'}</span>
-                            </div>
-                            <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
-                                <span class="text-slate-400 text-sm font-bold uppercase tracking-wide">Buraxılış forması:</span> 
-                                <span class="font-bold text-slate-800">${item.vahid || 'Məlum deyil'}</span>
+                                <span class="text-slate-400 dark:text-slate-500 text-sm font-bold uppercase tracking-wide italic">İstehsalçı ölkə:</span> 
+                                <span class="font-bold text-slate-800 dark:text-slate-200">${item.olke || 'Məlum deyil'}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 transition-colors">
                     <div class="flex items-center gap-2 mb-3">
                         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <h4 class="font-bold text-slate-700">Əlavə Məlumat</h4>
+                        <h4 class="font-bold text-slate-700 dark:text-slate-300 uppercase text-xs tracking-widest">Qeydlər</h4>
                     </div>
-                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">
                         ${item.name_ru ? `<strong>Rusca adı:</strong> ${item.name_ru}<br>` : ''}
-                        Məhsul haqqında daha geniş farmakoloji məlumat, əks göstərişlər və istifadə qaydası üçün rəsmi səhifəyə keçid edə bilərsiniz.
+                        Vahid: ${item.vahid || 'N1'}<br>
+                        Sifariş və ya daha ətraflı məlumat üçün rəsmi platformaya keçid edin.
                     </p>
                     
                     <a href="${officialUrl}" target="_blank" 
-                       class="flex items-center justify-center gap-3 bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-2xl font-bold hover:bg-blue-600 hover:text-white transition-all group">
-                        <span>Rəsmi Saytda Bax və Sifariş Et</span>
+                       class="flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border-2 border-blue-600 text-blue-600 dark:text-blue-400 px-6 py-3 rounded-2xl font-bold hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all group">
+                        <span>Rəsmi Səhifəyə Keçid</span>
                         <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                         </svg>
@@ -175,7 +216,6 @@
             document.body.classList.add('modal-active');
         }
 
-        // Modalı bağlayan funksiya
         function closeModal() {
             const container = document.getElementById('modalContainer');
             container.classList.replace('scale-100', 'scale-95');
@@ -185,12 +225,6 @@
             }, 200);
         }
 
-        // Klaviaturada Enter basıldıqda axtarış
-        document.getElementById('searchInput').addEventListener("keypress", e => {
-            if (e.key === "Enter") searchMedicine();
-        });
-
-        // Modal xaricinə kliklədikdə bağlanması
         document.getElementById('detailModal').addEventListener('click', (e) => {
             if(e.target.id === 'detailModal') closeModal();
         });
